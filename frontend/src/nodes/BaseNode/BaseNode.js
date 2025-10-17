@@ -1,7 +1,6 @@
 // BaseNode.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
-import { LogIn, LogOut, TextInitial, CloudCog, ListFilterPlus, Mail, Sigma, MessageSquareMore, Hourglass} from "lucide-react";
 
 export default function BaseNode({ id, data, selected }) {
   const { title, fields, handles, width, icon, description } = data.config;
@@ -14,9 +13,21 @@ export default function BaseNode({ id, data, selected }) {
     return initial;
   });
 
+  
+  useEffect(() => {
+    fields?.forEach(field => {
+      if (data[field.key] !== undefined && data[field.key] !== fieldValues[field.key]) {
+        setFieldValues(prev => ({ ...prev, [field.key]: data[field.key] }));
+      }
+    });
+  }, [data, fields]);
+
   const handleFieldChange = (key, value) => {
     setFieldValues(prev => ({ ...prev, [key]: value }));
   };
+
+  
+  const customOnChange = data.onTextChange;
 
   return (
     <div
@@ -66,7 +77,7 @@ export default function BaseNode({ id, data, selected }) {
         </div>
       </div>
 
-      {/* Fields */}
+      
       {fields && fields.length > 0 && (
         <div style={{ padding: '16px' }}>
           {fields.map((field, index) => (
@@ -128,34 +139,65 @@ export default function BaseNode({ id, data, selected }) {
               )}
 
               {field.type === 'textarea' && (
-                <textarea
-                  value={fieldValues[field.key]}
-                  onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  rows={field.rows || 3}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
-                    fontSize: '13px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    backgroundColor: '#f9fafb',
-                    color: '#1f2937',
-                    resize: 'vertical',
-                    fontFamily: 'ui-monospace, monospace',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#6366f1';
-                    e.target.style.backgroundColor = '#ffffff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#d1d5db';
-                    e.target.style.backgroundColor = '#f9fafb';
-                  }}
-                />
+                <div style={{ position: 'relative' }}>
+                  
+                  {field.renderOverlay && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      padding: '8px 10px',
+                      fontSize: '13px',
+                      color: '#1f2937',
+                      pointerEvents: 'none',
+                      whiteSpace: 'pre-wrap',
+                      wordWrap: 'break-word',
+                      fontFamily: 'ui-monospace, monospace',
+                      lineHeight: '1.5',
+                      zIndex: 1
+                    }}>
+                      {field.overlayContent}
+                    </div>
+                  )}
+                  
+                  
+                  <textarea
+                    value={fieldValues[field.key]}
+                    onChange={(e) => {
+                      handleFieldChange(field.key, e.target.value);
+                      if (customOnChange && field.key === 'text') {
+                        customOnChange(e.target.value);
+                      }
+                    }}
+                    placeholder={field.placeholder}
+                    rows={field.rows || 3}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      fontSize: '13px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      backgroundColor: field.renderOverlay ? 'transparent' : '#f9fafb',
+                      color: field.renderOverlay ? 'transparent' : '#1f2937',
+                      caretColor: '#1f2937',
+                      resize: 'vertical',
+                      fontFamily: 'ui-monospace, monospace',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s',
+                      minHeight: field.customHeight ? `${field.customHeight}px` : 'auto',
+                      position: 'relative',
+                      zIndex: 2
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                    }}
+                  />
+                </div>
               )}
 
               {field.type === 'select' && (
