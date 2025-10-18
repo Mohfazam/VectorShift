@@ -11,6 +11,7 @@ import {
 export const useStore = create((set, get) => ({
     nodes: [],
     edges: [],
+    nodeIDs: {},
     getNodeID: (type) => {
         const newIDs = {...get().nodeIDs};
         if (newIDs[type] === undefined) {
@@ -51,4 +52,10 @@ export const useStore = create((set, get) => ({
         }),
       });
     },
-  }));
+    deleteNode: (nodeId) => {
+      set({
+        nodes: get().nodes.filter((node) => node.id !== nodeId),
+        edges: get().edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId)
+      });
+    },
+}));

@@ -1,9 +1,11 @@
 // BaseNode.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Handle, Position } from 'reactflow';
+import { useStore } from '../../store';
 
 export default function BaseNode({ id, data, selected }) {
   const { title, fields, handles, width, icon, description } = data.config;
+  const deleteNode = useStore((state) => state.deleteNode);
   
   const [fieldValues, setFieldValues] = useState(() => {
     const initial = {};
@@ -13,21 +15,13 @@ export default function BaseNode({ id, data, selected }) {
     return initial;
   });
 
-  
-  useEffect(() => {
-    fields?.forEach(field => {
-      if (data[field.key] !== undefined && data[field.key] !== fieldValues[field.key]) {
-        setFieldValues(prev => ({ ...prev, [field.key]: data[field.key] }));
-      }
-    });
-  }, [data, fields]);
-
   const handleFieldChange = (key, value) => {
     setFieldValues(prev => ({ ...prev, [key]: value }));
   };
 
-  
-  const customOnChange = data.onTextChange;
+  const handleDelete = () => {
+    deleteNode(id);
+  };
 
   return (
     <div
@@ -43,7 +37,7 @@ export default function BaseNode({ id, data, selected }) {
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
       }}
     >
-      {/* Header */}
+      
       <div style={{
         backgroundColor: '#f0f4ff',
         padding: '12px 16px',
@@ -75,6 +69,37 @@ export default function BaseNode({ id, data, selected }) {
             </p>
           )}
         </div>
+        
+        <button
+          onClick={handleDelete}
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '4px',
+            backgroundColor: 'transparent',
+            color: '#6b7280',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            fontWeight: 'normal',
+            transition: 'all 0.2s',
+            paddingTop: '4px',
+            lineHeight: '1'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#e0e7ff';
+            e.target.style.color = '#4338ca';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.color = '#6b7280';
+          }}
+        >
+          ×
+        </button>
       </div>
 
       
@@ -139,65 +164,34 @@ export default function BaseNode({ id, data, selected }) {
               )}
 
               {field.type === 'textarea' && (
-                <div style={{ position: 'relative' }}>
-                  
-                  {field.renderOverlay && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      padding: '8px 10px',
-                      fontSize: '13px',
-                      color: '#1f2937',
-                      pointerEvents: 'none',
-                      whiteSpace: 'pre-wrap',
-                      wordWrap: 'break-word',
-                      fontFamily: 'ui-monospace, monospace',
-                      lineHeight: '1.5',
-                      zIndex: 1
-                    }}>
-                      {field.overlayContent}
-                    </div>
-                  )}
-                  
-                  
-                  <textarea
-                    value={fieldValues[field.key]}
-                    onChange={(e) => {
-                      handleFieldChange(field.key, e.target.value);
-                      if (customOnChange && field.key === 'text') {
-                        customOnChange(e.target.value);
-                      }
-                    }}
-                    placeholder={field.placeholder}
-                    rows={field.rows || 3}
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      fontSize: '13px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      outline: 'none',
-                      backgroundColor: field.renderOverlay ? 'transparent' : '#f9fafb',
-                      color: field.renderOverlay ? 'transparent' : '#1f2937',
-                      caretColor: '#1f2937',
-                      resize: 'vertical',
-                      fontFamily: 'ui-monospace, monospace',
-                      boxSizing: 'border-box',
-                      transition: 'all 0.2s',
-                      minHeight: field.customHeight ? `${field.customHeight}px` : 'auto',
-                      position: 'relative',
-                      zIndex: 2
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#6366f1';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d1d5db';
-                    }}
-                  />
-                </div>
+                <textarea
+                  value={fieldValues[field.key]}
+                  onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                  placeholder={field.placeholder}
+                  rows={field.rows || 3}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    fontSize: '13px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    backgroundColor: '#f9fafb',
+                    color: '#1f2937',
+                    resize: 'vertical',
+                    fontFamily: 'ui-monospace, monospace',
+                    boxSizing: 'border-box',
+                    transition: 'all 0.2s'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#6366f1';
+                    e.target.style.backgroundColor = '#ffffff';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#d1d5db';
+                    e.target.style.backgroundColor = '#f9fafb';
+                  }}
+                />
               )}
 
               {field.type === 'select' && (
@@ -263,7 +257,7 @@ export default function BaseNode({ id, data, selected }) {
         </div>
       )}
 
-      {/* Handles */}
+      
       {handles?.map((handle, index) => {
         const position = handle.side === 'left' ? Position.Left : Position.Right;
         let topStyle = {};
@@ -280,6 +274,7 @@ export default function BaseNode({ id, data, selected }) {
             style={{
               width: '12px',
               height: '12px',
+              marginRight: '-3px',
               backgroundColor: '#6366f1',
               border: '2px solid #ffffff',
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
