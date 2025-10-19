@@ -1,3 +1,8 @@
+# To Run Follow this steps in console: 
+# Step 1: pip install fastapi uvicorn
+# Step 2: uvicorn main:app --reload
+
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
