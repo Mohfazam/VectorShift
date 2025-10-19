@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import BaseNode from './BaseNode/BaseNode';
 import { nodeConfig } from './BaseNode/NodeConfig';
 
-export const TextNode = ({ id, data, selected }) => {
+const TextNodeComponent = ({ id, data, selected }) => {
   const initialText = data?.text || '{{input}}';
   const [textValue, setTextValue] = useState(initialText);
 
@@ -26,65 +26,33 @@ export const TextNode = ({ id, data, selected }) => {
 
   const dynamicHandles = extractVariables(textValue);
 
-  
-  const calculateHeight = (text) => {
+  const calculateDimensions = (text) => {
     const lines = text.split('\n').length;
-    const minLines = 3;
-    const lineHeight = 24;
-    const padding = 40;
-    return Math.max(120, (Math.max(lines, minLines) * lineHeight) + padding);
-  };
-
-  const calculateWidth = (text) => {
-    const lines = text.split('\n');
-    const maxLineLength = Math.max(...lines.map(line => line.length), 20);
-    const charWidth = 7.5;
+    const lineHeight = 20;
+    const minHeight = 100;
+    const maxHeight = 300;
     const padding = 60;
-    return Math.max(280, Math.min(600, (maxLineLength * charWidth) + padding));
+
+    const height = Math.min(maxHeight, Math.max(minHeight, (lines * lineHeight) + padding));
+
+    const lineArray = text.split('\n');
+    const maxLineLength = Math.max(...lineArray.map(line => line.length), 20);
+    const charWidth = 8.5;
+    const minWidth = 280;
+    const maxWidth = 500;
+    const widthPadding = 60;
+
+    const width = Math.min(maxWidth, Math.max(minWidth, (maxLineLength * charWidth) + widthPadding));
+
+    return { height, width, rows: Math.max(3, lines) };
   };
 
-  const textHeight = calculateHeight(textValue);
-  const textWidth = calculateWidth(textValue);
+  const { height, width, rows } = calculateDimensions(textValue);
 
-  
-  const renderHighlightedText = (text) => {
-    const parts = [];
-    let lastIndex = 0;
-    const variableRegex = /\{\{\s*(\w+)\s*\}\}/g;
-    let match;
-
-    while ((match = variableRegex.exec(text)) !== null) {
-      
-      if (match.index > lastIndex) {
-        parts.push(text.substring(lastIndex, match.index));
-      }
-      
-      parts.push(
-        <span key={match.index} style={{
-          backgroundColor: '#dbeafe',
-          color: '#1e40af',
-          padding: '2px 4px',
-          borderRadius: '3px',
-          fontWeight: '500'
-        }}>
-          {match[0]}
-        </span>
-      );
-      lastIndex = match.index + match[0].length;
-    }
-
-    
-    if (lastIndex < text.length) {
-      parts.push(text.substring(lastIndex));
-    }
-
-    return parts.length > 0 ? parts : text;
-  };
-
- 
   const enhancedConfig = {
     ...nodeConfig.text,
-    width: textWidth,
+    width: width,
+    customHeight: height,
     handles: [
       ...dynamicHandles,
       { type: 'source', side: 'right', idSuffix: 'output', topPercent: 50 }
@@ -96,10 +64,8 @@ export const TextNode = ({ id, data, selected }) => {
         label: 'Text',
         defaultValue: initialText,
         placeholder: 'Enter text with {{variables}}...',
-        rows: Math.max(3, textValue.split('\n').length),
-        customHeight: textHeight - 100,
-        renderOverlay: true,
-        overlayContent: renderHighlightedText(textValue)
+        rows: rows,
+        customHeight: height
       }
     ]
   };
@@ -113,3 +79,6 @@ export const TextNode = ({ id, data, selected }) => {
 
   return <BaseNode id={id} data={enhancedData} selected={selected} />;
 };
+
+export const TextNode = TextNodeComponent;
+export default TextNodeComponent;

@@ -4,7 +4,7 @@ import { Handle, Position } from 'reactflow';
 import { useStore } from '../../store';
 
 export default function BaseNode({ id, data, selected }) {
-  const { title, fields, handles, width, icon, description } = data.config;
+  const { title, fields, handles, width, icon, description, customHeight } = data.config;
   const deleteNode = useStore((state) => state.deleteNode);
   
   const [fieldValues, setFieldValues] = useState(() => {
@@ -17,10 +17,46 @@ export default function BaseNode({ id, data, selected }) {
 
   const handleFieldChange = (key, value) => {
     setFieldValues(prev => ({ ...prev, [key]: value }));
+    if (key === 'text' && data.onTextChange) {
+      data.onTextChange(value);
+    }
   };
 
   const handleDelete = () => {
     deleteNode(id);
+  };
+
+  const renderTextareaContent = (text) => {
+    const parts = [];
+    let lastIndex = 0;
+    const variableRegex = /\{\{\s*(\w+)\s*\}\}/g;
+    let match;
+
+    while ((match = variableRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      
+      parts.push(
+        <span key={`var-${match.index}`} style={{
+          backgroundColor: '#e0e7ff',
+          color: '#4f46e5',
+          padding: '2px 4px',
+          borderRadius: '3px',
+          fontWeight: '500',
+          fontFamily: 'ui-monospace, monospace'
+        }}>
+          {match[0]}
+        </span>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
   };
 
   return (
@@ -164,34 +200,53 @@ export default function BaseNode({ id, data, selected }) {
               )}
 
               {field.type === 'textarea' && (
-                <textarea
-                  value={fieldValues[field.key]}
-                  onChange={(e) => handleFieldChange(field.key, e.target.value)}
-                  placeholder={field.placeholder}
-                  rows={field.rows || 3}
-                  style={{
-                    width: '100%',
-                    padding: '8px 10px',
+                <div style={{ position: 'relative' }}>
+                  <textarea
+                    value={fieldValues[field.key]}
+                    onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                    placeholder={field.placeholder}
+                    rows={field.rows || 3}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      fontSize: '13px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      outline: 'none',
+                      backgroundColor: '#f9fafb',
+                      color: '#1f2937',
+                      resize: 'none',
+                      fontFamily: 'ui-monospace, monospace',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.2s',
+                      minHeight: field.customHeight ? `${field.customHeight - 60}px` : 'auto',
+                      overflow: 'hidden'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#6366f1';
+                      e.target.style.backgroundColor = '#ffffff';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.backgroundColor = '#f9fafb';
+                    }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: '8px',
+                    left: '10px',
                     fontSize: '13px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
-                    outline: 'none',
-                    backgroundColor: '#f9fafb',
-                    color: '#1f2937',
-                    resize: 'vertical',
+                    lineHeight: '1.5',
+                    color: 'transparent',
                     fontFamily: 'ui-monospace, monospace',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#6366f1';
-                    e.target.style.backgroundColor = '#ffffff';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#d1d5db';
-                    e.target.style.backgroundColor = '#f9fafb';
-                  }}
-                />
+                    width: 'calc(100% - 20px)',
+                    pointerEvents: 'none',
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word'
+                  }}>
+                    {field.key === 'text' ? renderTextareaContent(fieldValues[field.key]) : fieldValues[field.key]}
+                  </div>
+                </div>
               )}
 
               {field.type === 'select' && (
